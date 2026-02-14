@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: demo
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/springbootdb
+    username: postgres
+    password: 4589
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: true
+
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  expiration-at: 900000
+  expiration-rt: 604800000
+  secret-key: q5X1xZK8F0z+Y3nZ8KpZ9+0rK0z8ZKJ4dZpZq8W1k3M=
