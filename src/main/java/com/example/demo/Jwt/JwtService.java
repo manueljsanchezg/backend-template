@@ -1,12 +1,13 @@
 package com.example.demo.Jwt;
 
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
 
@@ -22,55 +23,78 @@ public class JwtService {
     @Value("${jwt.expiration-rt}")
     private long expirationRt;
 
-    public SecretKey getSecretKey() {
-        byte[] decodedKey = Base64.getDecoder().decode(secretKey);
-        return Keys.hmacShaKeyFor(decodedKey);
+    private byte[] getSecretKeyBytes() {
+        return Base64.getDecoder().decode(secretKey);
     }
 
     public String generateAccessTokenFromUsername(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .expiration(new Date(new Date().getTime() + expirationAt))
-                .issuedAt(new Date())
-                .signWith(getSecretKey())
-                .compact();
+        try {
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                    .subject(username)
+                    .expirationTime(new Date(new Date().getTime() + expirationAt))
+                    .issueTime(new Date())
+                    .build();
+
+            SignedJWT signedJWT = new SignedJWT(
+                    new JWSHeader(JWSAlgorithm.HS256),
+                    claimsSet
+            );
+
+            JWSSigner signer = new MACSigner(getSecretKeyBytes());
+            signedJWT.sign(signer);
+
+            return signedJWT.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error generating access token", e);
+        }
     }
 
     public String generateRefreshTokenFromUsername(String username) {
-        return Jwts.builder()
-                .subject(username)
-                .expiration(new Date(new Date().getTime() + expirationRt))
-                .issuedAt(new Date())
-                .signWith(getSecretKey())
-                .compact();
+        try {
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                    .subject(username)
+                    .expirationTime(new Date(new Date().getTime() + expirationRt))
+                    .issueTime(new Date())
+                    .build();
+
+            SignedJWT signedJWT = new SignedJWT(
+                    new JWSHeader(JWSAlgorithm.HS256),
+                    claimsSet
+            );
+
+            JWSSigner signer = new MACSigner(getSecretKeyBytes());
+            signedJWT.sign(signer);
+
+            return signedJWT.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error generating refresh token", e);
+        }
     }
 
     public Date getExpirarationFromToken(String token) {
-        return  Jwts.parser()
-                .verifyWith(getSecretKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getExpiration();
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getExpirationTime();
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing token expiration", e);
+        }
     }
 
     public String getUsernameFromToken(String token) {
-        return  Jwts.parser()
-                .verifyWith(getSecretKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getSubject();
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing token subject", e);
+        }
     }
 
     public boolean verifyToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSecretKey())
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (JwtException e) {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWSVerifier verifier = new MACVerifier(getSecretKeyBytes());
+            return signedJWT.verify(verifier);
+        } catch (Exception e) {
             return false;
         }
     }
