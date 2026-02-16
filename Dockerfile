@@ -2,6 +2,8 @@ FROM ghcr.io/graalvm/native-image-community:25.0.2-ol8-20260120 AS builder
 
 WORKDIR /app
 
+RUN microdnf install -y gzip tar && microdnf clean all
+
 COPY . .
 
 RUN chmod +x mvnw
