@@ -1,24 +1,17 @@
-FROM eclipse-temurin:25-jdk-alpine-3.23 AS build
+FROM ghcr.io/graalvm/native-image-community:25.0.2-ol8-20260120 AS builder
 
 WORKDIR /app
 
-COPY pom.xml .
-COPY mvnw .
-COPY .mvn .mvn
+COPY . .
 
 RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
 
-COPY src src
+RUN ./mvnw package -Pnative -DskipTests
 
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:25-jdk-alpine-3.23
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=builder /app/target/demo /app/demo
 
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/demo"]
