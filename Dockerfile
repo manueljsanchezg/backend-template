@@ -8,7 +8,7 @@ COPY . .
 
 RUN chmod +x mvnw
 
-RUN ./mvnw package -Pnative -DskipTests
+RUN ./mvnw native:compile -Pnative -DskipTests
 
 FROM debian:bookworm-slim
 
