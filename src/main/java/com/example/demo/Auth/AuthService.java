@@ -31,21 +31,21 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResult register(String username, String password, String deviceId) {
-        Optional<UserEntity> existingUser = userService.findByUsername(username);
+    public AuthResult register(String email, String password, String deviceId) {
+        Optional<UserEntity> existingUser = userService.findByEmail(email);
 
         if (existingUser.isPresent()) {
             throw new UserExistsException("User already exists");
         }
 
         UserEntity newUser = new UserEntity();
-        newUser.setUsername(username);
+        newUser.setEmail(email);
         newUser.setPassword(passwordEncoder.encode(password));
         newUser.setRole(Role.USER);
         userService.save(newUser);
 
-        String accessToken = jwtService.generateAccessTokenFromUsername(newUser.getUsername());
-        String refreshToken = jwtService.generateRefreshTokenFromUsername(newUser.getUsername());
+        String accessToken = jwtService.generateAccessTokenFromEmail(newUser.getEmail());
+        String refreshToken = jwtService.generateRefreshTokenFromEmail(newUser.getEmail());
 
         RefreshTokenEntity newRefreshToken = new RefreshTokenEntity();
         newRefreshToken.setToken(hashToken(refreshToken));
@@ -59,8 +59,8 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResult login(String username, String password, String deviceId) {
-        UserEntity user = userService.findByUsername(username)
+    public AuthResult login(String email, String password, String deviceId) {
+        UserEntity user = userService.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         boolean validPassword = passwordEncoder.matches(password, user.getPassword());
@@ -69,8 +69,8 @@ public class AuthService {
             throw new InvalidPasswordException("Invalid password");
         }
 
-        String accessToken = jwtService.generateAccessTokenFromUsername(user.getUsername());
-        String refreshToken = jwtService.generateRefreshTokenFromUsername(user.getUsername());
+        String accessToken = jwtService.generateAccessTokenFromEmail(user.getEmail());
+        String refreshToken = jwtService.generateRefreshTokenFromEmail(user.getEmail());
 
         RefreshTokenEntity rt = refreshTokenService.findByUserAndDeviceId(user, deviceId);
 
@@ -91,8 +91,8 @@ public class AuthService {
             throw new InvalidRefreshTokenException("Invalid Refresh Token");
         }
 
-        String username = jwtService.getUsernameFromToken(refreshToken);
-        UserEntity user = userService.findByUsername(username)
+        String email = jwtService.getEmailFromToken(refreshToken);
+        UserEntity user = userService.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         RefreshTokenEntity storedToken = refreshTokenService.findByUserAndDeviceId(user, deviceId);
@@ -107,8 +107,8 @@ public class AuthService {
             throw new InvalidRefreshTokenException("Refresh token expired");
         }
 
-        String newAccessToken = jwtService.generateAccessTokenFromUsername(user.getUsername());
-        String newRefreshToken = jwtService.generateRefreshTokenFromUsername(user.getUsername());
+        String newAccessToken = jwtService.generateAccessTokenFromEmail(user.getEmail());
+        String newRefreshToken = jwtService.generateRefreshTokenFromEmail(user.getEmail());
 
         storedToken.setToken(hashToken(newRefreshToken));
         storedToken.setExpiration(jwtService.getExpirarationFromToken(newRefreshToken));
@@ -116,6 +116,29 @@ public class AuthService {
         refreshTokenService.save(storedToken);
 
         return new AuthResult(newAccessToken, newRefreshToken, user.getRole().name());
+    }
+
+    @Transactional
+    public void logout(String refreshToken, String deviceId) {
+
+        if (!jwtService.verifyToken(refreshToken)) {
+            throw new InvalidRefreshTokenException("Invalid Refresh Token");
+        }
+
+        String username = jwtService.getEmailFromToken(refreshToken);
+
+        UserEntity user = userService.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        RefreshTokenEntity storedToken = refreshTokenService.findByUserAndDeviceId(user, deviceId);
+
+        String incomingTokenHash = hashToken(refreshToken);
+
+        if (!incomingTokenHash.equals(storedToken.getToken())) {
+            throw new InvalidRefreshTokenException("Token does not match records");
+        }
+
+        refreshTokenService.delete(storedToken);
     }
 
     private String hashToken(String token) {

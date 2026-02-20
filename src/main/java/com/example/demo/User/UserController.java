@@ -44,7 +44,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserEntity> createUser(@RequestBody CreateUser user) {
         UserEntity newUser = new UserEntity();
-        newUser.setUsername(user.username());
+        newUser.setEmail(user.email());
         newUser.setPassword(user.password());
         newUser.setRole(user.role());
 
@@ -56,7 +56,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserEntity> updateUser(@PathVariable Integer id, @RequestBody UpdateUser user) {
         UserEntity userToUpdate = new UserEntity();
-        userToUpdate.setUsername(user.username());
+        userToUpdate.setEmail(user.email());
         userToUpdate.setPassword(user.password());
         userToUpdate.setRole(user.role());
 

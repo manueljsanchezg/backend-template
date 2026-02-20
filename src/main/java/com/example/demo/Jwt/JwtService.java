@@ -27,7 +27,7 @@ public class JwtService {
         return Base64.getDecoder().decode(secretKey);
     }
 
-    public String generateAccessTokenFromUsername(String username) {
+    public String generateAccessTokenFromEmail(String username) {
         try {
             JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                     .subject(username)
@@ -49,7 +49,7 @@ public class JwtService {
         }
     }
 
-    public String generateRefreshTokenFromUsername(String username) {
+    public String generateRefreshTokenFromEmail(String username) {
         try {
             JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                     .subject(username)
@@ -80,7 +80,7 @@ public class JwtService {
         }
     }
 
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             return signedJWT.getJWTClaimsSet().getSubject();

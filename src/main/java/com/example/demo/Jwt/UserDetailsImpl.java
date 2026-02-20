@@ -25,7 +25,7 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl fromUserEntity(UserEntity userEntity) {
-        return new UserDetailsImpl(userEntity.getUsername(), userEntity.getPassword(), List.of(new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name())));
+        return new UserDetailsImpl(userEntity.getEmail(), userEntity.getPassword(), List.of(new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name())));
     }
 
     @Override

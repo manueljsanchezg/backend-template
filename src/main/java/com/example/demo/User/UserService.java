@@ -39,15 +39,15 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<UserEntity> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Optional<UserEntity> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Transactional
     public UserEntity update(Integer id, UserEntity user) {
         UserEntity existingUser = findById(id);
 
-        existingUser.setUsername(user.getUsername());
+        existingUser.setEmail(user.getEmail());
         existingUser.setRole(user.getRole());
 
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {

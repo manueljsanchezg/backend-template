@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-
-
     private final int secondsExpirationRt;
     private final AuthService authService;
 
@@ -28,7 +26,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody AuthRequest request, HttpServletResponse response) {
-        AuthResult registerRes = authService.register(request.username(), request.password(), request.deviceId());
+        AuthResult registerRes = authService.register(request.email(), request.password(), request.deviceId());
         Cookie cookie = new Cookie("refresh_token", registerRes.refreshToken());
         cookie.setMaxAge(secondsExpirationRt);
         cookie.setSecure(false);
@@ -41,7 +39,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request, HttpServletResponse response) {
-        AuthResult loginRes = authService.login(request.username(), request.password(), request.deviceId());
+        AuthResult loginRes = authService.login(request.email(), request.password(), request.deviceId());
         Cookie cookie = new Cookie("refresh_token", loginRes.refreshToken());
         cookie.setMaxAge(secondsExpirationRt);
         cookie.setSecure(false);
