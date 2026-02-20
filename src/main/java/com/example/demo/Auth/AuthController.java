@@ -65,4 +65,23 @@ public class AuthController {
         return ResponseEntity.ok().body(AuthResponse);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(value = "refresh_token", required = true) String token,
+            @RequestBody RefreshTokenRequest refreshTokenRequest,
+            HttpServletResponse response) {
+
+        authService.logout(token, refreshTokenRequest.deviceId());
+
+        Cookie cookie = new Cookie("refresh_token", null);
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
+    }
+
 }
